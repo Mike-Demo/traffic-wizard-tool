@@ -32,6 +32,7 @@ import {
   checkBrowserStack,
   createRun,
   getRun,
+  clearBrowserStackCredentialsFn,
   hasBrowserStackCredentials,
   listRuns,
   runBatch,
