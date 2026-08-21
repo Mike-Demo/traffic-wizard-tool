@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { createSession, getTitle, navigate, quitSession, sleep } from "./browserstack.server";
+import { createBrowserStackClient } from "./browserstack.server";
 import { joinUrl } from "./traffic-planner";
 
 type AnyClient = SupabaseClient<any, any, any>;
@@ -20,10 +20,12 @@ async function runOne(
   dwellMin: number,
   dwellMax: number,
   buildName: string,
+  credentials: { username: string; accessKey: string },
 ) {
+  const client = createBrowserStackClient(credentials.username, credentials.accessKey);
   let bsId: string | null = null;
   try {
-    bsId = await createSession({
+    bsId = await client.createSession({
       caps: row.capabilities,
       country: row.country,
       sessionName: `${row.browser_label}${row.country ? " · " + row.country : ""}`,
@@ -36,22 +38,22 @@ async function runOne(
 
     let visited = 0;
     for (const path of row.planned_paths) {
-      await navigate(bsId, joinUrl(targetUrl, path));
-      await getTitle(bsId);
+      await client.navigate(bsId, joinUrl(targetUrl, path));
+      await client.getTitle(bsId);
       visited++;
       await supabase.from("run_sessions").update({ pages_visited: visited }).eq("id", row.id);
       const dwell = dwellMin + Math.random() * Math.max(0, dwellMax - dwellMin);
-      await sleep(dwell * 1000);
+      await new Promise((r) => setTimeout(r, dwell * 1000));
     }
 
-    await quitSession(bsId);
+    await client.quitSession(bsId);
     await supabase
       .from("run_sessions")
-      .update({ status: "passed", finished_at: new Date().toISOString() })
+      .update({ status: "/passed", finished_at: new Date().toISOString() })
       .eq("id", row.id);
     return { ok: true };
   } catch (err) {
-    if (bsId) await quitSession(bsId);
+    if (bsId) await client.quitSession(bsId);
     await supabase
       .from("run_sessions")
       .update({
@@ -64,7 +66,12 @@ async function runOne(
   }
 }
 
-export async function executeBatch(supabase: AnyClient, runId: string, batchSize: number) {
+export async function executeBatch(
+  supabase: AnyClient,
+  runId: string,
+  batchSize: number,
+  credentials: { username: string; accessKey: string },
+) {
   const { data: run, error: runErr } = await supabase
     .from("runs")
     .select("id, target_url, config, status")
@@ -93,7 +100,7 @@ export async function executeBatch(supabase: AnyClient, runId: string, batchSize
   const buildName = `run-${runId.slice(0, 8)}`;
   await Promise.all(
     rows.map((r) =>
-      runOne(supabase, r, run.target_url as string, cfg.dwellMin ?? 3, cfg.dwellMax ?? 6, buildName),
+      runOne(supabase, r, run.target_url as string, cfg.dwellMin ?? 3, cfg.dwellMax ?? 6, buildName, credentials),
     ),
   );
 
