@@ -49,7 +49,7 @@ async function runOne(
     await client.quitSession(bsId);
     await supabase
       .from("run_sessions")
-      .update({ status: "/passed", finished_at: new Date().toISOString() })
+      .update({ status: "passed", finished_at: new Date().toISOString() })
       .eq("id", row.id);
     return { ok: true };
   } catch (err) {
