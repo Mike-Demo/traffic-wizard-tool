@@ -1,9 +1,9 @@
-import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
+import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 
 function getKey(): Buffer {
   const raw = process.env["BROWSERSTACK_CREDENTIALS_KEY"];
-  if (!raw) throw new Error("BROWSERSTACK_CREDENTIALS_KEY is not set");
-  return createHash("sha256").update(raw).digest();
+  if (!raw) throw new Error("BROWSERSTACK_CREDENTIALS_KEY is not configured");
+  return Buffer.from(raw, "base64");
 }
 
 export function encryptCredential(plaintext: string): string {
