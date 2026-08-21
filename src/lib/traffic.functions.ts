@@ -28,6 +28,13 @@ export const saveBrowserStackCredentials = createServerFn({ method: "POST" })
     return saveAndTestBrowserStackCredentials(context.userId, data.username, data.accessKey);
   });
 
+export const clearBrowserStackCredentialsFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { clearBrowserStackCredentials } = await import("./browserstackAuth.server");
+    return clearBrowserStackCredentials(context.userId);
+  });
+
 export const hasBrowserStackCredentials = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
