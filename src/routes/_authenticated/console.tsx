@@ -111,6 +111,7 @@ function ConsolePage() {
   const verifyDomainFn = useServerFn(verifyTargetDomain);
   const removeDomainFn = useServerFn(removeTargetDomain);
   const saveCredentialsFn = useServerFn(saveBrowserStackCredentials);
+  const clearCredentialsFn = useServerFn(clearBrowserStackCredentialsFn);
 
   const connection = useQuery({
     queryKey: ["bs-connection"],
@@ -136,6 +137,20 @@ function ConsolePage() {
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "Could not save credentials"),
   });
+
+  const clearCredentials = useMutation({
+    mutationFn: async () => clearCredentialsFn({ data: undefined }),
+    onSuccess: () => {
+      toast.success("Saved credentials removed");
+      setBsUsername("");
+      setBsAccessKey("");
+      setShowCredentialsForm(true);
+      queryClient.invalidateQueries({ queryKey: ["bs-credentials"] });
+      queryClient.invalidateQueries({ queryKey: ["bs-connection"] });
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Could not remove credentials"),
+  });
+
 
   const domainsQuery = useQuery({
     queryKey: ["target-domains"],
