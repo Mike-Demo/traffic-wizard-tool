@@ -362,11 +362,92 @@ function ConsolePage() {
             <Play className="mr-2 h-4 w-4" />
             {startMutation.isPending ? "Starting…" : "Start run"}
           </Button>
-          {!connection.data?.connected && !connection.isLoading && (
-            <p className="mono text-xs text-warning">
-              Add your BrowserStack credentials before starting a run.
-            </p>
-          )}
+          <div className="space-y-3 rounded-lg border border-border bg-card/80 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-medium">BrowserStack credentials</h3>
+                <p className="text-xs text-muted-foreground">
+                  {connection.data?.connected
+                    ? `Connected · ${connection.data.plan}`
+                    : credentialsQuery.data?.configured
+                      ? `Saved as ${credentialsQuery.data.username}`
+                      : "Required to drive real browser sessions."}
+                </p>
+              </div>
+              {connection.data?.connected ? (
+                <Badge
+                  variant="outline"
+                  className="border-primary/50 text-primary mono shrink-0 text-[10px] uppercase"
+                >
+                  connected
+                </Badge>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowCredentialsForm((s) => !s)}
+                >
+                  {showCredentialsForm
+                    ? "Cancel"
+                    : credentialsQuery.data?.configured
+                      ? "Update"
+                      : "Add"}
+                </Button>
+              )}
+            </div>
+
+            {showCredentialsForm && (
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <Label htmlFor="bs-username" className="text-xs">
+                    Username
+                  </Label>
+                  <Input
+                    id="bs-username"
+                    value={bsUsername}
+                    onChange={(e) => setBsUsername(e.target.value)}
+                    placeholder="your_browserstack_username"
+                    className="mono text-xs"
+                    disabled={saveCredentials.isPending}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="bs-access-key" className="text-xs">
+                    Access key
+                  </Label>
+                  <Input
+                    id="bs-access-key"
+                    type="password"
+                    value={bsAccessKey}
+                    onChange={(e) => setBsAccessKey(e.target.value)}
+                    placeholder="••••••••••••"
+                    className="mono text-xs"
+                    disabled={saveCredentials.isPending}
+                  />
+                </div>
+                {connection.data?.error && !connection.isLoading && (
+                  <p className="text-xs text-destructive">{connection.data.error}</p>
+                )}
+                <Button
+                  className="w-full"
+                  disabled={
+                    !bsUsername.trim() || !bsAccessKey.trim() || saveCredentials.isPending
+                  }
+                  onClick={() => saveCredentials.mutate()}
+                >
+                  {saveCredentials.isPending ? "Saving…" : "Save & test connection"}
+                </Button>
+              </div>
+            )}
+
+            {!connection.data?.connected && !connection.isLoading && !showCredentialsForm && (
+              <p className="mono text-xs text-warning">
+                {connection.data?.missingCredentials
+                  ? "Add your BrowserStack credentials to start a run."
+                  : connection.data?.error ?? "Could not connect to BrowserStack."}
+              </p>
+            )}
+          </div>
         </section>
 
         <section className="space-y-4">
