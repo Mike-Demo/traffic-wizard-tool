@@ -14,7 +14,107 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      run_sessions: {
+        Row: {
+          browser_label: string
+          bs_session_id: string | null
+          capabilities: Json
+          country: string | null
+          created_at: string
+          error: string | null
+          finished_at: string | null
+          id: string
+          pages_visited: number
+          planned_paths: Json
+          run_id: string
+          started_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          browser_label: string
+          bs_session_id?: string | null
+          capabilities?: Json
+          country?: string | null
+          created_at?: string
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          pages_visited?: number
+          planned_paths?: Json
+          run_id: string
+          started_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          browser_label?: string
+          bs_session_id?: string | null
+          capabilities?: Json
+          country?: string | null
+          created_at?: string
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          pages_visited?: number
+          planned_paths?: Json
+          run_id?: string
+          started_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "run_sessions_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      runs: {
+        Row: {
+          authorized: boolean
+          completed_sessions: number
+          config: Json
+          created_at: string
+          failed_sessions: number
+          id: string
+          status: string
+          target_url: string
+          total_sessions: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          authorized?: boolean
+          completed_sessions?: number
+          config?: Json
+          created_at?: string
+          failed_sessions?: number
+          id?: string
+          status?: string
+          target_url: string
+          total_sessions?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          authorized?: boolean
+          completed_sessions?: number
+          config?: Json
+          created_at?: string
+          failed_sessions?: number
+          id?: string
+          status?: string
+          target_url?: string
+          total_sessions?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
