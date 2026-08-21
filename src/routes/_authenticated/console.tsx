@@ -484,6 +484,11 @@ function ConsolePage() {
             <Play className="mr-2 h-4 w-4" />
             {startMutation.isPending ? "Starting…" : "Start run"}
           </Button>
+          {!targetVerified && (
+            <p className="text-xs text-warning">
+              Verify ownership of {targetHost || "the target domain"} before starting a run.
+            </p>
+          )}
           <div className="space-y-3 rounded-lg border border-border bg-card/80 p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
