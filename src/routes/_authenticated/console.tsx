@@ -510,14 +510,14 @@ function ConsolePage() {
               <div>
                 <h3 className="text-sm font-medium">BrowserStack credentials</h3>
                 <p className="text-xs text-muted-foreground">
-                  {credentialsQuery.data?.configured
-                    ? `Saved as ${credentialsQuery.data.username}`
-                    : connection.data?.connected
-                      ? `Connected · ${connection.data.plan}`
+                  {connection.data?.connected
+                    ? `Connected · ${connection.data.plan}`
+                    : credentialsQuery.data?.configured
+                      ? `Saved as ${credentialsQuery.data.username} · not accepted by BrowserStack`
                       : "Required to drive real browser sessions."}
                 </p>
               </div>
-              {(credentialsQuery.data?.configured || connection.data?.connected) && !showCredentialsForm ? (
+              {connection.data?.connected && !showCredentialsForm ? (
                 <Badge
                   variant="outline"
                   className="border-primary/50 text-primary mono shrink-0 text-[10px] uppercase"
@@ -550,8 +550,14 @@ function ConsolePage() {
                     onChange={(e) => setBsUsername(e.target.value)}
                     placeholder="your_browserstack_username"
                     className="mono text-xs"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
                     disabled={saveCredentials.isPending}
                   />
+                  <p className="text-[11px] text-muted-foreground">
+                    From BrowserStack → Automate → Settings. Not an email or URL.
+                  </p>
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="bs-access-key" className="text-xs">
@@ -564,11 +570,18 @@ function ConsolePage() {
                     onChange={(e) => setBsAccessKey(e.target.value)}
                     placeholder="••••••••••••"
                     className="mono text-xs"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
                     disabled={saveCredentials.isPending}
                   />
                 </div>
-                {connection.data?.error && !connection.isLoading && !connection.data.connected && (
-                  <p className="text-xs text-destructive">{connection.data.error}</p>
+                {saveCredentials.error && (
+                  <p className="text-xs text-destructive">
+                    {saveCredentials.error instanceof Error
+                      ? saveCredentials.error.message
+                      : "Could not save credentials"}
+                  </p>
                 )}
                 <Button
                   className="w-full"
@@ -577,10 +590,22 @@ function ConsolePage() {
                   }
                   onClick={() => saveCredentials.mutate()}
                 >
-                  {saveCredentials.isPending ? "Saving…" : "Save & test connection"}
+                  {saveCredentials.isPending ? "Testing…" : "Save & test connection"}
                 </Button>
+                {credentialsQuery.data?.configured && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-destructive"
+                    disabled={clearCredentials.isPending}
+                    onClick={() => clearCredentials.mutate()}
+                  >
+                    {clearCredentials.isPending ? "Removing…" : "Remove saved credentials"}
+                  </Button>
+                )}
               </div>
             )}
+
 
             {!connection.data?.connected && !connection.isLoading && !showCredentialsForm && (
               <p className="mono text-xs text-warning">
