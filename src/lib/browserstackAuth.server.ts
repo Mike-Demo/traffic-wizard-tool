@@ -1,5 +1,6 @@
 import { createBrowserStackClient } from "./browserstack.server";
 import {
+  deleteUserBrowserStackCredentials,
   getUserBrowserStackCredentials,
   maskUsername,
   saveUserBrowserStackCredentials,
@@ -16,14 +17,40 @@ export async function loadBrowserStackCredentials(
   return null;
 }
 
+function sanitizeUsername(raw: string) {
+  const username = raw.trim();
+  if (/\s/.test(username) || username.includes("://") || username.includes("/")) {
+    throw new Error(
+      "That doesn't look like a BrowserStack username. Copy the username shown on your BrowserStack Automate settings page (not a URL or email).",
+    );
+  }
+  return username;
+}
+
 export async function saveAndTestBrowserStackCredentials(
   userId: string,
-  username: string,
-  accessKey: string,
+  rawUsername: string,
+  rawAccessKey: string,
 ) {
-  await saveUserBrowserStackCredentials(userId, username, accessKey);
+  const username = sanitizeUsername(rawUsername);
+  const accessKey = rawAccessKey.trim();
+
+  // Test BEFORE persisting so invalid credentials never get stored.
   const client = createBrowserStackClient(username, accessKey);
-  const plan = await client.plan();
+  let plan: Awaited<ReturnType<typeof client.plan>>;
+  try {
+    plan = await client.plan();
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (message.includes("401")) {
+      throw new Error(
+        "BrowserStack rejected these credentials (401). Check the username and access key on your BrowserStack Automate settings page and try again.",
+      );
+    }
+    throw new Error(message);
+  }
+
+  await saveUserBrowserStackCredentials(userId, username, accessKey);
   return {
     saved: true as const,
     connected: true as const,
@@ -31,6 +58,11 @@ export async function saveAndTestBrowserStackCredentials(
     running: plan.parallel_sessions_running ?? 0,
     max: plan.parallel_sessions_max_allowed ?? 1,
   };
+}
+
+export async function clearBrowserStackCredentials(userId: string) {
+  await deleteUserBrowserStackCredentials(userId);
+  return { cleared: true as const };
 }
 
 export { maskUsername };
