@@ -1,12 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
-import { createBrowserStackClient } from "./browserstack.server";
-import {
-  getUserBrowserStackCredentials,
-  maskUsername,
-  saveUserBrowserStackCredentials,
-} from "./browserstackCredentials.server";
 import { normalizeConfig, planSessions } from "./traffic-planner";
 import type { TrafficConfig } from "./traffic-presets";
 
@@ -26,35 +20,19 @@ const credentialsSchema = z.object({
   accessKey: z.string().trim().min(1, "Access key is required").max(200, "Access key too long"),
 });
 
-async function loadCredentials(userId: string): Promise<{ username: string; accessKey: string } | null> {
-  const userCreds = await getUserBrowserStackCredentials(userId);
-  if (userCreds) return userCreds;
-  const envUser = process.env["BROWSERSTACK_USERNAME"];
-  const envKey = process.env["BROWSERSTACK_ACCESS_KEY"];
-  if (envUser && envKey) return { username: envUser, accessKey: envKey };
-  return null;
-}
-
 export const saveBrowserStackCredentials = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { username: string; accessKey: string }) => credentialsSchema.parse(input))
   .handler(async ({ data, context }) => {
-    await saveUserBrowserStackCredentials(context.userId, data.username, data.accessKey);
-    const client = createBrowserStackClient(data.username, data.accessKey);
-    const plan = await client.plan();
-    return {
-      saved: true as const,
-      connected: true as const,
-      plan: plan.automate_plan ?? "unknown",
-      running: plan.parallel_sessions_running ?? 0,
-      max: plan.parallel_sessions_max_allowed ?? 1,
-    };
+    const { saveAndTestBrowserStackCredentials } = await import("./browserstackAuth.server");
+    return saveAndTestBrowserStackCredentials(context.userId, data.username, data.accessKey);
   });
 
 export const hasBrowserStackCredentials = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const creds = await loadCredentials(context.userId);
+    const { loadBrowserStackCredentials, maskUsername } = await import("./browserstackAuth.server");
+    const creds = await loadBrowserStackCredentials(context.userId);
     if (!creds) return { configured: false as const };
     return { configured: true as const, username: maskUsername(creds.username) };
   });
@@ -62,7 +40,9 @@ export const hasBrowserStackCredentials = createServerFn({ method: "POST" })
 export const checkBrowserStack = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const creds = await loadCredentials(context.userId);
+    const { loadBrowserStackCredentials } = await import("./browserstackAuth.server");
+    const { createBrowserStackClient } = await import("./browserstack.server");
+    const creds = await loadBrowserStackCredentials(context.userId);
     if (!creds) {
       return {
         connected: false as const,
@@ -139,7 +119,8 @@ export const runBatch = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { executeBatch } = await import("./traffic-runner.server");
-    const creds = await loadCredentials(context.userId);
+    const { loadBrowserStackCredentials } = await import("./browserstackAuth.server");
+    const creds = await loadBrowserStackCredentials(context.userId);
     if (!creds) throw new Error("BrowserStack credentials not configured");
     return executeBatch(context.supabase, data.runId, data.batchSize, creds);
   });
