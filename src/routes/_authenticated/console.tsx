@@ -90,6 +90,9 @@ function ConsolePage() {
   const [config, setConfig] = useState<TrafficConfig>(DEFAULT_CONFIG);
   const [pathsText, setPathsText] = useState(DEFAULT_CONFIG.paths.join("\n"));
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
+  const [bsUsername, setBsUsername] = useState("");
+  const [bsAccessKey, setBsAccessKey] = useState("");
+  const [showCredentialsForm, setShowCredentialsForm] = useState(false);
   const draining = useRef(false);
 
   const check = useServerFn(checkBrowserStack);
@@ -98,11 +101,32 @@ function ConsolePage() {
   const stop = useServerFn(stopRun);
   const fetchRun = useServerFn(getRun);
   const fetchRuns = useServerFn(listRuns);
+  const fetchCredentials = useServerFn(hasBrowserStackCredentials);
+  const saveCredentialsFn = useServerFn(saveBrowserStackCredentials);
 
   const connection = useQuery({
     queryKey: ["bs-connection"],
     queryFn: () => check({ data: undefined }),
     refetchOnWindowFocus: false,
+  });
+
+  const credentialsQuery = useQuery({
+    queryKey: ["bs-credentials"],
+    queryFn: () => fetchCredentials({ data: undefined }),
+    refetchOnWindowFocus: false,
+  });
+
+  const saveCredentials = useMutation({
+    mutationFn: async () =>
+      saveCredentialsFn({ data: { username: bsUsername, accessKey: bsAccessKey } }),
+    onSuccess: () => {
+      toast.success("Credentials saved and connection verified");
+      queryClient.invalidateQueries({ queryKey: ["bs-credentials"] });
+      queryClient.invalidateQueries({ queryKey: ["bs-connection"] });
+      setShowCredentialsForm(false);
+      setBsAccessKey("");
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Could not save credentials"),
   });
 
   const runQuery = useQuery({
