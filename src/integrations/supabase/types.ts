@@ -115,6 +115,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_browserstack_credentials: {
+        Row: {
+          access_key_ciphertext: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+          username_ciphertext: string
+        }
+        Insert: {
+          access_key_ciphertext: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          username_ciphertext: string
+        }
+        Update: {
+          access_key_ciphertext?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          username_ciphertext?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
