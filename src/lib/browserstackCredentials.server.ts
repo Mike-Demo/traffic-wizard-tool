@@ -41,3 +41,11 @@ export function maskUsername(username: string) {
   if (username.length <= 3) return "*".repeat(username.length);
   return username.slice(0, 3) + "*".repeat(username.length - 3);
 }
+
+export async function deleteUserBrowserStackCredentials(userId: string) {
+  const { error } = await supabaseAdmin
+    .from("user_browserstack_credentials")
+    .delete()
+    .eq("user_id", userId);
+  if (error) throw new Error(error.message);
+}
