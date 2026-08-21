@@ -356,7 +356,7 @@ function ConsolePage() {
 
           <Button
             className="w-full"
-            disabled={!authorized || startMutation.isPending || run?.status === "running"}
+            disabled={!authorized || !connection.data?.connected || startMutation.isPending || run?.status === "running"}
             onClick={() => startMutation.mutate()}
           >
             <Play className="mr-2 h-4 w-4" />
