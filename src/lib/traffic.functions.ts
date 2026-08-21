@@ -66,7 +66,7 @@ export const createRun = createServerFn({ method: "POST" })
         run_id: run.id,
         user_id: context.userId,
         browser_label: p.browser_label,
-        capabilities: p.capabilities,
+        capabilities: p.capabilities as Record<string, string>,
         country: p.country,
         planned_paths: p.planned_paths,
       })),
