@@ -80,6 +80,8 @@ export const createRun = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    const { assertTargetAuthorized } = await import("./domainVerification.server");
+    await assertTargetAuthorized(context.userId, data.targetUrl);
     const config = normalizeConfig(data.config as TrafficConfig);
     const planned = planSessions(config);
 
@@ -164,4 +166,39 @@ export const listRuns = createServerFn({ method: "POST" })
       .order("created_at", { ascending: false })
       .limit(25);
     return data ?? [];
+  });
+
+const domainSchema = z.object({ domain: z.string().trim().min(3).max(253) });
+
+export const listTargetDomains = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { listDomains, VERIFICATION_TXT_PREFIX } = await import("./domainVerification.server");
+    const domains = await listDomains(context.userId);
+    return { domains, txtPrefix: VERIFICATION_TXT_PREFIX };
+  });
+
+export const addTargetDomain = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { domain: string }) => domainSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { addDomain } = await import("./domainVerification.server");
+    return addDomain(context.userId, data.domain);
+  });
+
+export const verifyTargetDomain = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { domain: string }) => domainSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { verifyDomain } = await import("./domainVerification.server");
+    return verifyDomain(context.userId, data.domain);
+  });
+
+export const removeTargetDomain = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { domain: string }) => domainSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { removeDomain } = await import("./domainVerification.server");
+    await removeDomain(context.userId, data.domain);
+    return { ok: true };
   });

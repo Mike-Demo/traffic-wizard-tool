@@ -37,6 +37,10 @@ import {
   runBatch,
   saveBrowserStackCredentials,
   stopRun,
+  addTargetDomain,
+  listTargetDomains,
+  removeTargetDomain,
+  verifyTargetDomain,
 } from "@/lib/traffic.functions";
 
 export const Route = createFileRoute("/_authenticated/console")({
@@ -86,7 +90,7 @@ function ConsolePage() {
   const queryClient = useQueryClient();
 
   const [targetUrl, setTargetUrl] = useState("https://example.com");
-  const [authorized, setAuthorized] = useState(false);
+  const [newDomain, setNewDomain] = useState("");
   const [config, setConfig] = useState<TrafficConfig>(DEFAULT_CONFIG);
   const [pathsText, setPathsText] = useState(DEFAULT_CONFIG.paths.join("\n"));
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
@@ -102,6 +106,10 @@ function ConsolePage() {
   const fetchRun = useServerFn(getRun);
   const fetchRuns = useServerFn(listRuns);
   const fetchCredentials = useServerFn(hasBrowserStackCredentials);
+  const fetchDomains = useServerFn(listTargetDomains);
+  const addDomainFn = useServerFn(addTargetDomain);
+  const verifyDomainFn = useServerFn(verifyTargetDomain);
+  const removeDomainFn = useServerFn(removeTargetDomain);
   const saveCredentialsFn = useServerFn(saveBrowserStackCredentials);
 
   const connection = useQuery({
@@ -128,6 +136,52 @@ function ConsolePage() {
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "Could not save credentials"),
   });
+
+  const domainsQuery = useQuery({
+    queryKey: ["target-domains"],
+    queryFn: () => fetchDomains({ data: undefined }),
+    refetchOnWindowFocus: false,
+  });
+
+  const addDomainMutation = useMutation({
+    mutationFn: async () => addDomainFn({ data: { domain: newDomain } }),
+    onSuccess: () => {
+      setNewDomain("");
+      toast.success("Domain added — publish the verification record, then verify");
+      queryClient.invalidateQueries({ queryKey: ["target-domains"] });
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Could not add domain"),
+  });
+
+  const verifyDomainMutation = useMutation({
+    mutationFn: async (domain: string) => verifyDomainFn({ data: { domain } }),
+    onSuccess: (res) => {
+      if (res.verified) toast.success(`${res.domain} verified`);
+      else toast.error(res.error ?? "Not verified yet");
+      queryClient.invalidateQueries({ queryKey: ["target-domains"] });
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Verification failed"),
+  });
+
+  const removeDomainMutation = useMutation({
+    mutationFn: async (domain: string) => removeDomainFn({ data: { domain } }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["target-domains"] }),
+  });
+
+  const domains = domainsQuery.data?.domains ?? [];
+  const txtPrefix = domainsQuery.data?.txtPrefix ?? "traffic-simulator-verify=";
+
+  let targetHost = "";
+  try {
+    targetHost = new URL(targetUrl).hostname.toLowerCase().replace(/^www\./, "");
+  } catch {
+    targetHost = "";
+  }
+  const targetVerified =
+    !!targetHost &&
+    domains.some(
+      (d) => d.verified_at && (targetHost === d.domain || targetHost.endsWith(`.${d.domain}`)),
+    );
 
   const runQuery = useQuery({
     queryKey: ["run", activeRunId],
@@ -246,16 +300,84 @@ function ConsolePage() {
               placeholder="https://your-site.com"
               className="mono"
             />
-            <label className="flex items-start gap-2 pt-1 text-xs text-muted-foreground">
-              <Checkbox
-                checked={authorized}
-                onCheckedChange={(v) => setAuthorized(v === true)}
-                className="mt-0.5"
+            <p className="pt-1 text-xs text-muted-foreground">
+              Runs can only target domains you have verified below.
+            </p>
+          </div>
+
+          <div className="space-y-3 rounded-lg border border-border bg-card/80 p-4">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-primary" />
+              <h3 className="text-sm font-medium">Verified domains</h3>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Prove control by adding a DNS TXT record on the domain, or serving the token at{" "}
+              <span className="mono">/.well-known/traffic-simulator-verify.txt</span>.
+            </p>
+            <div className="flex gap-2">
+              <Input
+                value={newDomain}
+                onChange={(e) => setNewDomain(e.target.value)}
+                placeholder="your-site.com"
+                className="mono text-xs"
               />
-              <span>
-                I own this domain or am authorized to run load and analytics tests against it.
-              </span>
-            </label>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!newDomain.trim() || addDomainMutation.isPending}
+                onClick={() => addDomainMutation.mutate()}
+              >
+                Add
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {domains.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No domains yet.</p>
+              ) : (
+                domains.map((d) => (
+                  <div key={d.id} className="space-y-2 rounded border border-border/60 p-2">
+                    <div className="flex items-center gap-2">
+                      <span className="mono truncate text-xs">{d.domain}</span>
+                      <Badge
+                        variant="outline"
+                        className={`mono ml-auto shrink-0 text-[10px] uppercase ${
+                          d.verified_at
+                            ? "border-primary/50 text-primary"
+                            : "border-warning/40 text-warning"
+                        }`}
+                      >
+                        {d.verified_at ? "verified" : "pending"}
+                      </Badge>
+                    </div>
+                    {!d.verified_at && (
+                      <p className="mono break-all rounded bg-muted/40 p-2 text-[10px] text-muted-foreground">
+                        TXT @ {d.domain} → {txtPrefix}
+                        {d.token}
+                      </p>
+                    )}
+                    <div className="flex gap-2">
+                      {!d.verified_at && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={verifyDomainMutation.isPending}
+                          onClick={() => verifyDomainMutation.mutate(d.domain)}
+                        >
+                          Verify
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => removeDomainMutation.mutate(d.domain)}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -356,12 +478,17 @@ function ConsolePage() {
 
           <Button
             className="w-full"
-            disabled={!authorized || !connection.data?.connected || startMutation.isPending || run?.status === "running"}
+            disabled={!targetVerified || !connection.data?.connected || startMutation.isPending || run?.status === "running"}
             onClick={() => startMutation.mutate()}
           >
             <Play className="mr-2 h-4 w-4" />
             {startMutation.isPending ? "Starting…" : "Start run"}
           </Button>
+          {!targetVerified && (
+            <p className="text-xs text-warning">
+              Verify ownership of {targetHost || "the target domain"} before starting a run.
+            </p>
+          )}
           <div className="space-y-3 rounded-lg border border-border bg-card/80 p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
