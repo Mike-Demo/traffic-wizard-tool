@@ -378,6 +378,8 @@ function ConsolePage() {
                 ))
               )}
             </div>
+          </div>
+
           <div className="space-y-2">
             <Label>Browsers &amp; devices</Label>
             <div className="grid grid-cols-1 gap-1.5">
