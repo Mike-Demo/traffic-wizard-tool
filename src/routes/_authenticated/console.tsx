@@ -367,33 +367,32 @@ function ConsolePage() {
               <div>
                 <h3 className="text-sm font-medium">BrowserStack credentials</h3>
                 <p className="text-xs text-muted-foreground">
-                  {connection.data?.connected
-                    ? `Connected · ${connection.data.plan}`
-                    : credentialsQuery.data?.configured
-                      ? `Saved as ${credentialsQuery.data.username}`
+                  {credentialsQuery.data?.configured
+                    ? `Saved as ${credentialsQuery.data.username}`
+                    : connection.data?.connected
+                      ? `Connected · ${connection.data.plan}`
                       : "Required to drive real browser sessions."}
                 </p>
               </div>
-              {connection.data?.connected ? (
+              {(credentialsQuery.data?.configured || connection.data?.connected) && !showCredentialsForm ? (
                 <Badge
                   variant="outline"
                   className="border-primary/50 text-primary mono shrink-0 text-[10px] uppercase"
                 >
                   connected
                 </Badge>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowCredentialsForm((s) => !s)}
-                >
-                  {showCredentialsForm
-                    ? "Cancel"
-                    : credentialsQuery.data?.configured
-                      ? "Update"
-                      : "Add"}
-                </Button>
-              )}
+              ) : null}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowCredentialsForm((s) => !s)}
+              >
+                {showCredentialsForm
+                  ? "Cancel"
+                  : credentialsQuery.data?.configured
+                    ? "Update"
+                    : "Add"}
+              </Button>
             </div>
 
             {showCredentialsForm && (
@@ -425,7 +424,7 @@ function ConsolePage() {
                     disabled={saveCredentials.isPending}
                   />
                 </div>
-                {connection.data?.error && !connection.isLoading && (
+                {connection.data?.error && !connection.isLoading && !connection.data.connected && (
                   <p className="text-xs text-destructive">{connection.data.error}</p>
                 )}
                 <Button
