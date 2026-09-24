@@ -17,7 +17,7 @@ Drive **real browser sessions** (via BrowserStack Automate) against a website **
 - TanStack Start v1 (React 19, SSR, server functions) + Vite 8
 - Tailwind CSS v4 + shadcn/ui
 - Supabase (Postgres, Auth incl. Google, RLS)
-- Nitro build targeting **Cloudflare Workers** (`cloudflare-module`)
+- Nitro build targeting **Cloudflare Workers** (`cloudflare-module`), with static public pages for Spacefast
 - BrowserStack Automate (W3C WebDriver over `fetch`)
 
 ```text
@@ -51,7 +51,8 @@ Worker (TanStack Start / Nitro)
 - Node.js 22+ and Bun 1.3+ (npm also works)
 - A Supabase project
 - A BrowserStack Automate account
-- A Cloudflare account (or a host that runs Cloudflare-Worker output, e.g. Spacefast)
+- A server-capable host for the complete application
+- A Spacefast account only if you also want a static copy of the public pages
 
 ## Environment variables
 
@@ -77,7 +78,14 @@ supabase link --project-ref <your-ref>
 supabase db push          # applies supabase/migrations/*
 ```
 
-Then in Supabase Auth: enable Email, and optionally Google (add your site URL to the redirect allow-list).
+Then configure authentication:
+
+1. Enable Email authentication.
+2. For Google sign-in, create a Google OAuth web client and add the callback URL supplied by your authentication provider to its authorized redirect URIs.
+3. Enable Google authentication with that client ID and secret.
+4. Add every deployed site origin to the authentication redirect allow-list, including the production Lovable or Cloudflare URL and the Spacefast URL when used.
+
+Keep the Google client secret in your authentication provider settings; never place it in this repository or a `VITE_*` variable.
 
 ## Local development
 
@@ -98,19 +106,22 @@ Output:
 - `.output/public` – static assets
 - `.output/server` – Cloudflare Worker (`index.mjs`, `wrangler.json`)
 - `dist/client`, `dist/server` – copies created by `postbuild` for hosts that expect `dist/`
+- `dist/client/index.html`, `dist/client/auth/index.html` – generated public pages for static hosting
 
 ## Deploying
 
 ### Spacefast
 
-The build itself succeeds; earlier deploys failed only because Spacefast looked for `dist/client`. The `postbuild` script now creates it. Settings:
+Spacefast is a static-file host. This project generates the public home and sign-in pages as HTML so Spacefast displays the site instead of a directory listing. Settings:
 
 - Install: `bun install --frozen-lockfile` (auto)
 - Build: `bun run build` (auto)
 - Output directory: `dist/client` (auto) — or set it to `.output/public`
-- Add all environment variables above
+- Add the three `VITE_SUPABASE_*` build variables if the sign-in page should connect to your account system
 
-This app **needs its server** (login, BrowserStack calls, domain checks). If Spacefast only serves static files, pages will load but those features won't work — deploy the Worker from `dist/server` / `.output/server` as well (see below).
+The static Spacefast copy can display `/` and `/auth`. It cannot run the protected console, BrowserStack sessions, domain checks, encrypted credential storage, or other server operations. Keep the complete app on Lovable or deploy the Worker to a server-capable host, then use that URL for those features.
+
+If Spacefast shows `assets`, `favicon.png`, and `robots.txt` as a file list, the uploaded build is missing `index.html`. Rebuild and confirm the post-build check succeeds before publishing `dist/client` again.
 
 ### Cloudflare Workers
 
@@ -120,6 +131,8 @@ npx wrangler deploy --config .output/server/wrangler.json
 # or: npx nitro deploy --prebuilt
 npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY   # repeat for each server secret
 ```
+
+Cloudflare-style serverless runtimes limit request duration and resource usage. Large or long-running traffic batches can exceed those limits; keep batches small or move execution to a durable background worker/queue on your chosen host.
 
 ## Using the app
 
@@ -132,7 +145,9 @@ npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY   # repeat for each server sec
 
 | Problem | Fix |
 | --- | --- |
-| `Build output directory does not exist: dist/client` | Make sure `postbuild` ran (`package.json` scripts), or set output dir to `.output/public` |
+| `Build output directory does not exist: dist/client` | Run `bun run build`; its post-build step creates and validates `dist/client` |
+| Spacefast displays a file list | The published folder lacks `index.html`; rebuild with the current configuration and publish `dist/client` |
+| Console does not open on Spacefast | Expected on static hosting; use the Lovable or server-capable deployment for the console |
 | `BrowserStack plan check failed (401)` | Wrong username/access key. Remove saved credentials and re-enter from Automate settings |
 | "Verify ownership of … before starting a run" | Complete domain verification; DNS changes can take minutes to propagate |
 | `BROWSERSTACK_CREDENTIALS_KEY is not configured` | Set that secret on the server |
