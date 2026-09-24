@@ -22,7 +22,7 @@ const credentialsSchema = z.object({
 
 export const saveBrowserStackCredentials = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { username: string; accessKey: string }) => credentialsSchema.parse(input))
+  .validator((input: { username: string; accessKey: string }) => credentialsSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { saveAndTestBrowserStackCredentials } = await import("./browserstackAuth.server");
     return saveAndTestBrowserStackCredentials(context.userId, data.username, data.accessKey);
@@ -77,7 +77,7 @@ export const checkBrowserStack = createServerFn({ method: "POST" })
 
 export const createRun = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { targetUrl: string; authorized: boolean; config: TrafficConfig }) =>
+  .validator((input: { targetUrl: string; authorized: boolean; config: TrafficConfig }) =>
     z
       .object({
         targetUrl: z.string().url(),
@@ -123,7 +123,7 @@ export const createRun = createServerFn({ method: "POST" })
 
 export const runBatch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { runId: string; batchSize: number }) =>
+  .validator((input: { runId: string; batchSize: number }) =>
     z.object({ runId: z.string().uuid(), batchSize: z.number().min(1).max(5) }).parse(input),
   )
   .handler(async ({ data, context }) => {
@@ -136,7 +136,7 @@ export const runBatch = createServerFn({ method: "POST" })
 
 export const stopRun = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { runId: string }) => z.object({ runId: z.string().uuid() }).parse(input))
+  .validator((input: { runId: string }) => z.object({ runId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     await context.supabase.from("runs").update({ status: "stopped" }).eq("id", data.runId);
     await context.supabase
@@ -149,7 +149,7 @@ export const stopRun = createServerFn({ method: "POST" })
 
 export const getRun = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { runId: string }) => z.object({ runId: z.string().uuid() }).parse(input))
+  .validator((input: { runId: string }) => z.object({ runId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { data: run } = await context.supabase
       .from("runs")
@@ -187,7 +187,7 @@ export const listTargetDomains = createServerFn({ method: "POST" })
 
 export const addTargetDomain = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { domain: string }) => domainSchema.parse(input))
+  .validator((input: { domain: string }) => domainSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { addDomain } = await import("./domainVerification.server");
     return addDomain(context.userId, data.domain);
@@ -195,7 +195,7 @@ export const addTargetDomain = createServerFn({ method: "POST" })
 
 export const verifyTargetDomain = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { domain: string }) => domainSchema.parse(input))
+  .validator((input: { domain: string }) => domainSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { verifyDomain } = await import("./domainVerification.server");
     return verifyDomain(context.userId, data.domain);
@@ -203,7 +203,7 @@ export const verifyTargetDomain = createServerFn({ method: "POST" })
 
 export const removeTargetDomain = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { domain: string }) => domainSchema.parse(input))
+  .validator((input: { domain: string }) => domainSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { removeDomain } = await import("./domainVerification.server");
     await removeDomain(context.userId, data.domain);
