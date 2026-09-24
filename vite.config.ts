@@ -11,5 +11,12 @@ export default defineConfig({
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
+    // Spacefast serves static files only. Generate the public routes as HTML, while keeping the
+    // authenticated console server-rendered so no user-specific state is captured at build time.
+    pages: [{ path: "/" }, { path: "/auth" }],
+    prerender: {
+      enabled: true,
+      autoStaticPathsDiscovery: false,
+    },
   },
 });

@@ -1,9 +1,18 @@
-// Copies the Nitro build output into dist/ for hosts (e.g. Spacefast) that expect dist/client.
+// Copies the Nitro build output into dist/ for hosts that expect dist/client.
 import { cpSync, existsSync, rmSync } from "node:fs";
 
 if (!existsSync(".output/public")) {
-  process.stderr.write("postbuild: .output/public not found, skipping copy\n");
-  process.exit(0);
+  throw new Error("postbuild: .output/public was not created");
+}
+if (!existsSync(".output/public/index.html")) {
+  throw new Error(
+    "postbuild: .output/public/index.html was not created; refusing to publish an incomplete static site",
+  );
+}
+if (!existsSync(".output/public/auth/index.html")) {
+  throw new Error(
+    "postbuild: .output/public/auth/index.html was not created; refusing to publish an incomplete static site",
+  );
 }
 rmSync("dist", { recursive: true, force: true });
 cpSync(".output/public", "dist/client", { recursive: true });
