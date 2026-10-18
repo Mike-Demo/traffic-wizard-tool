@@ -1,0 +1,227 @@
+{
+  "boltSlidesVersion": 1,
+  "boltSlidesId": "11011050-f9d6-4d43-8a9e-3e43af51bbaf",
+  "deck": {
+    "title": "Traffic Wizard — analytics, minus the sorcery degree",
+    "transition": "fade",
+    "font": "sora",
+    "accent": "#b18cff"
+  },
+  "slides": [
+    {
+      "id": "s1",
+      "position": 0,
+      "layout": "cover",
+      "props": {
+        "kicker": "github.com/Mike-Demo/traffic-wizard",
+        "title": "Traffic ==Wizard==.",
+        "subtitle": "Website analytics, minus the sorcery degree required to read them.",
+        "foot": "Open source · 2026"
+      },
+      "background": {
+        "type": "gradient",
+        "from": "#120c22",
+        "to": "#0b0912",
+        "angle": 165
+      },
+      "animation": "cascade",
+      "transition": null,
+      "nav": null,
+      "notes": "Set the tone: this is a friendly tool, not another dashboard. One sentence — it turns traffic numbers into plain-language answers.",
+      "status": "none"
+    },
+    {
+      "id": "s2",
+      "position": 1,
+      "layout": "contrast",
+      "props": {
+        "kicker": "The problem",
+        "title": "Dashboards bury the ==answer==.",
+        "left": {
+          "label": "Your dashboard",
+          "title": "Charts, acronyms, jargon",
+          "points": [
+            "Sessions, sources, bounce rates",
+            "Six tabs to answer one question",
+            "Still unsure what to do Monday"
+          ]
+        },
+        "right": {
+          "label": "Your real questions",
+          "title": "Three simple asks",
+          "points": [
+            "Did more people come?",
+            "Where did they come from?",
+            "What should I do next?"
+          ]
+        }
+      },
+      "background": { "type": "color", "color": "var(--bg)" },
+      "animation": "cascade",
+      "transition": null,
+      "nav": null,
+      "notes": "Owners of small sites don't want analytics — they want answers. Every chart on the left is standing between them and the three questions on the right.",
+      "status": "none"
+    },
+    {
+      "id": "s3",
+      "position": 2,
+      "layout": "chat",
+      "props": {
+        "kicker": "What it does",
+        "title": "Answers in ==sentences==, not charts.",
+        "name": "The Wizard",
+        "messages": [
+          { "from": "user", "text": "How did my site do this week?" },
+          {
+            "from": "ai",
+            "text": "Traffic is up 32%, mostly from a Reddit post that linked your guide on Tuesday."
+          },
+          { "from": "user", "text": "What should I do about it?" },
+          {
+            "from": "ai",
+            "text": "Two moves this week: reply to that thread, and add a follow-up post — visitors from Reddit bounce before page two."
+          }
+        ]
+      },
+      "background": { "type": "color", "color": "var(--bg)" },
+      "animation": "cascade",
+      "transition": null,
+      "nav": null,
+      "notes": "This is the product in one exchange: what changed, what likely caused it, and the one or two moves worth making this week.",
+      "status": "none"
+    },
+    {
+      "id": "s4",
+      "position": 3,
+      "layout": "steps",
+      "props": {
+        "kicker": "How it works",
+        "title": "Connect, scan, ==brief==.",
+        "items": [
+          {
+            "title": "Connect your stats",
+            "body": "Point the Wizard at the traffic data your site already collects."
+          },
+          {
+            "title": "It scans for signals",
+            "body": "Spikes, drops, top sources, and the pages quietly on the move."
+          },
+          {
+            "title": "You get a briefing",
+            "body": "A short, readable summary — changes, likely causes, suggested moves."
+          }
+        ]
+      },
+      "background": { "type": "color", "color": "var(--bg)" },
+      "animation": "cascade",
+      "transition": null,
+      "nav": null,
+      "notes": "Three beats. The magic is step two: the Wizard does the pattern-hunting a human analyst would do, then writes it up.",
+      "status": "none"
+    },
+    {
+      "id": "s5",
+      "position": 4,
+      "layout": "manifesto",
+      "props": {
+        "label": "Why a wizard?",
+        "text": "A little theatre makes the numbers approachable. The ==persona== keeps it friendly — the read underneath stays ==honest== and data-first."
+      },
+      "background": { "type": "color", "color": "var(--bg)" },
+      "animation": "cascade",
+      "transition": null,
+      "nav": null,
+      "notes": "The costume is the point: wizardry is a promise that the tool does the hard reading for you. Under the hood it's plain, honest analysis.",
+      "status": "none"
+    },
+    {
+      "id": "s6",
+      "position": 5,
+      "layout": "bento",
+      "props": {
+        "kicker": "Key features",
+        "title": "Everything the small site needs.",
+        "tiles": [
+          {
+            "k": "01",
+            "title": "Change alerts",
+            "body": "Spikes and drops flagged the moment they happen — with the likely cause.",
+            "c": 3,
+            "variant": "accent"
+          },
+          {
+            "k": "02",
+            "title": "Plain-language briefings",
+            "body": "No jargon. What changed, why, and what to try next."
+          },
+          {
+            "k": "03",
+            "title": "Source spotlight",
+            "body": "See which channels are actually sending people."
+          },
+          {
+            "k": "04",
+            "title": "Pages on the move",
+            "body": "The URLs quietly rising — or quietly slipping."
+          },
+          {
+            "k": "05",
+            "title": "This week's moves",
+            "body": "One or two concrete actions, not forty metrics.",
+            "c": 3,
+            "variant": "glow"
+          }
+        ]
+      },
+      "background": { "type": "color", "color": "var(--bg)" },
+      "animation": "cascade",
+      "transition": null,
+      "nav": null,
+      "notes": "Don't read every tile. Highlight change alerts and this week's moves — the two features that replace a dashboard habit.",
+      "status": "none"
+    },
+    {
+      "id": "s7",
+      "position": 6,
+      "layout": "statGrid",
+      "props": {
+        "kicker": "Status",
+        "title": "A working tool, ==open source==.",
+        "stats": [
+          { "value": "100%", "label": "open source", "caption": "every line on GitHub" },
+          { "value": "MIT", "label": "license", "caption": "use it, fork it, ship it" },
+          { "value": "today", "label": "working tool", "caption": "not a waitlist" }
+        ]
+      },
+      "background": { "type": "color", "color": "var(--bg)" },
+      "animation": "cascade",
+      "transition": null,
+      "nav": null,
+      "notes": "It's real and it's free. Anyone can read the code, self-host it, or contribute.",
+      "status": "none"
+    },
+    {
+      "id": "s8",
+      "position": 7,
+      "layout": "cover",
+      "props": {
+        "kicker": "Cast the spell on your own traffic",
+        "title": "Your numbers, ==decoded==.",
+        "subtitle": "github.com/Mike-Demo/traffic-wizard",
+        "foot": "Star it · fork it · point it at your site"
+      },
+      "background": {
+        "type": "gradient",
+        "from": "#120c22",
+        "to": "#0b0912",
+        "angle": 165
+      },
+      "animation": "cascade",
+      "transition": "zoom",
+      "nav": null,
+      "notes": "Close on the repo link. Ask for one action: open the repo and try it on their own stats.",
+      "status": "none"
+    }
+  ]
+}
