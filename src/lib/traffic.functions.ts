@@ -8,7 +8,12 @@ const configSchema = z.object({
   browsers: z.array(z.string()).min(1),
   countries: z.array(z.string()),
   sessions: z.number(),
-  paths: z.array(z.string()),
+  paths: z.array(
+    z
+      .string()
+      .max(500)
+      .regex(/^\/(?!\/)[^\s\\]*$/, "Paths must start with a single / and stay on the target site"),
+  ),
   pagesPerSession: z.number(),
   dwellMin: z.number(),
   dwellMax: z.number(),
