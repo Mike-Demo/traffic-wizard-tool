@@ -87,15 +87,65 @@ async function dnsTxtRecords(name: string): Promise<string[]> {
     .filter(Boolean);
 }
 
+function isPrivateIp(ip: string): boolean {
+  const v = ip.toLowerCase();
+  if (v.includes(":")) {
+    return (
+      v === "::" || v === "::1" || v.startsWith("fc") || v.startsWith("fd") ||
+      v.startsWith("fe8") || v.startsWith("fe9") || v.startsWith("fea") || v.startsWith("feb") ||
+      v.startsWith("::ffff:")
+    );
+  }
+  const p = v.split(".").map(Number);
+  if (p.length !== 4 || p.some((n) => Number.isNaN(n))) return true;
+  const [a, b] = p as [number, number, number, number];
+  return (
+    a === 0 || a === 10 || a === 127 || a >= 224 ||
+    (a === 100 && b >= 64 && b <= 127) ||
+    (a === 169 && b === 254) ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168) ||
+    (a === 198 && (b === 18 || b === 19))
+  );
+}
+
+async function resolvesPublicly(host: string): Promise<boolean> {
+  const ips: string[] = [];
+  for (const type of ["A", "AAAA"]) {
+    const res = await fetch(
+      `https://dns.google/resolve?name=${encodeURIComponent(host)}&type=${type}`,
+      { headers: { accept: "application/dns-json" } },
+    );
+    if (!res.ok) return false;
+    const json = (await res.json()) as { Answer?: Array<{ type?: number; data?: string }> };
+    for (const a of json.Answer ?? []) {
+      if ((a.type === 1 || a.type === 28) && a.data) ips.push(a.data);
+    }
+  }
+  return ips.length > 0 && !ips.some(isPrivateIp);
+}
+
+/** Fetch the well-known file, only following redirects that stay on the same domain and public IPs. */
 async function wellKnownToken(domain: string): Promise<string | null> {
   try {
-    const res = await fetch(`https://${domain}/.well-known/traffic-simulator-verify.txt`, {
-      redirect: "follow",
-      signal: AbortSignal.timeout(8000),
-    });
-    if (!res.ok) return null;
-    const text = (await res.text()).trim().slice(0, 200);
-    return text || null;
+    let url = new URL(`https://${domain}/.well-known/traffic-simulator-verify.txt`);
+    for (let hop = 0; hop < 3; hop++) {
+      const host = url.hostname.toLowerCase();
+      const sameSite = host === domain || host === `www.${domain}`;
+      if (url.protocol !== "https:" || url.port !== "" || !sameSite) return null;
+      if (!(await resolvesPublicly(host))) return null;
+      const res = await fetch(url, { redirect: "manual", signal: AbortSignal.timeout(8000) });
+      if (res.status >= 300 && res.status < 400) {
+        const loc = res.headers.get("location");
+        if (!loc) return null;
+        url = new URL(loc, url);
+        continue;
+      }
+      if (!res.ok) return null;
+      const text = (await res.text()).slice(0, 200).trim();
+      return text || null;
+    }
+    return null;
   } catch {
     return null;
   }
