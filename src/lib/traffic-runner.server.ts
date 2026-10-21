@@ -37,8 +37,13 @@ async function runOne(
       .eq("id", row.id);
 
     let visited = 0;
+    const targetHost = new URL(targetUrl).host;
     for (const path of row.planned_paths) {
-      await client.navigate(bsId, joinUrl(targetUrl, path));
+      const pageUrl = joinUrl(targetUrl, path);
+      if (new URL(pageUrl).host !== targetHost) {
+        throw new Error("Planned path leaves the verified target domain");
+      }
+      await client.navigate(bsId, pageUrl);
       await client.getTitle(bsId);
       visited++;
       await supabase.from("run_sessions").update({ pages_visited: visited }).eq("id", row.id);
