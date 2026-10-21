@@ -127,6 +127,15 @@ export const runBatch = createServerFn({ method: "POST" })
     z.object({ runId: z.string().uuid(), batchSize: z.number().min(1).max(5) }).parse(input),
   )
   .handler(async ({ data, context }) => {
+    const { data: run, error: runErr } = await context.supabase
+      .from("runs")
+      .select("target_url")
+      .eq("id", data.runId)
+      .single();
+    if (runErr || !run) throw new Error("Run not found");
+    // Re-check on every batch: run rows are user-writable, so never trust the stored target.
+    const { assertTargetAuthorized } = await import("./domainVerification.server");
+    await assertTargetAuthorized(context.userId, run.target_url);
     const { executeBatch } = await import("./traffic-runner.server");
     const { loadBrowserStackCredentials } = await import("./browserstackAuth.server");
     const creds = await loadBrowserStackCredentials(context.userId);
