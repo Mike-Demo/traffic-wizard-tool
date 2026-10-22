@@ -53,9 +53,13 @@ export function planSessions(config: TrafficConfig): PlannedSession[] {
 }
 
 export function joinUrl(base: string, path: string) {
-  try {
-    return new URL(path, base).toString();
-  } catch {
-    return base;
+  if (!/^\/(?!\/)[^\s\\]*$/.test(path)) {
+    throw new Error("Planned path must be a same-origin path");
   }
+  const target = new URL(base);
+  const resolved = new URL(path, target);
+  if (resolved.origin !== target.origin) {
+    throw new Error("Planned path leaves the verified target origin");
+  }
+  return resolved.toString();
 }
